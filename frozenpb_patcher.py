@@ -7,13 +7,12 @@ from google.protobuf import text_format
 from tensorflow import gfile
 from tensorflow import io
 
-REDUCE_PATCH_PKG = {}
-REDUCE_PATCH_PKG['default'] = {'shape':[-1, 1280],
-              'octContent':'\\377\\377\\377\\377\\000\\005\\000\\000'}
-
-REDUCE_PATCH_PKG['nasnet'] = {'shape':[-1, 1056],
-              'octContent':'\\377\\377\\377\\377\\040\\004\\000\\000'}
-
+def dec2octpkg4(input):
+  octPkgStr = ''
+  for i in range(4):
+    octPkgStr = octPkgStr + oct((input>>(i*8)) % 256).replace('0o','\\')
+  return octPkgStr
+  
 KEEP_DIM_PATCH =\
 '''
   attr {
@@ -256,14 +255,14 @@ def pbtxt_processing(content):
         nodeNameLoc = content.rfind('name', 0, keepDimLoc)
         nodeNameDLoc = content.find('"', nodeNameLoc) 
         nodeName = content[nodeNameDLoc+1:content.find('"', nodeNameDLoc + 1)]
-        print(f'Found Node name: {nodeName}, Output Shape: {REDUCE_PATCH_PKG[NET_TYPE]["shape"]}')
+        print(f'Found Node name: {nodeName}, Output Shape: {OUTPUT_FILTER}, Oct: {dec2octpkg4(OUTPUT_FILTER)}')
         print('Patching the Mean operator...')
         
         nodeEnd = content.find('node', nodeNameLoc)
         content = content.replace(f'input: "{nodeName}"', 'input: "reshape/Reshape"')
 
         patcher = REDUCE_DIM_PATCH.replace('{INPUT_TENSOR_NAME}', nodeName)
-        patcher = patcher.replace('{SHAPE}', REDUCE_PATCH_PKG[NET_TYPE]['octContent'])
+        patcher = patcher.replace('{SHAPE}', f'\\377\\377\\377\\377{dec2octpkg4(OUTPUT_FILTER)}')
 
         content = content[:nodeEnd] + patcher + content[nodeEnd:]
 
@@ -312,9 +311,9 @@ def pbtxt_processing(content):
 
 FILE_NAME = sys.argv[1]
 
-NET_TYPE = 'default'
+OUTPUT_FILTER = 1280
 if len(sys.argv) > 2:
-  NET_TYPE = sys.argv[2]
+  OUTPUT_FILTER = int(sys.argv[2])
 
 if not os.path.isfile(os.path.join('../pbtxt/', os.path.basename(FILE_NAME).split('.')[0] + '.pbtxt')):
   with gfile.FastGFile(FILE_NAME,'rb') as f:
