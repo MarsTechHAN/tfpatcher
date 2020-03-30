@@ -15,6 +15,8 @@ def dec2octpkg4(input):
     return octPkgStr
 
 
+TEMP_PBTXT_FOLDER = "./pbtxt"
+
 KEEP_DIM_PATCH = '''
   attr {
     key: "keep_dims"
@@ -333,17 +335,17 @@ if __name__ == "__main__":
     if len(sys.argv) > 2:
         OUTPUT_FILTER = int(sys.argv[2])
 
-    if not os.path.isfile(os.path.join('../pbtxt/', os.path.basename(FILE_NAME).split('.')[0] + '.pbtxt')):
+    if not os.path.isfile(os.path.join(TEMP_PBTXT_FOLDER, os.path.basename(FILE_NAME).split('.')[0] + '.pbtxt')):
         with gfile.FastGFile(FILE_NAME, 'rb') as f:
             GRAPH_DEF = tf.compat.v1.get_default_graph().as_graph_def(add_shapes=True)
             GRAPH_DEF.ParseFromString(f.read())
 
         tf.import_graph_def(GRAPH_DEF, name='')
-        io.write_graph(GRAPH_DEF, '../pbtxt',
+        io.write_graph(GRAPH_DEF, TEMP_PBTXT_FOLDER,
                        os.path.basename(FILE_NAME).split('.')[0] + '.pbtxt', as_text=True)
     else:
         PBTXT_FILE = open(os.path.join(
-            '../pbtxt/', os.path.basename(FILE_NAME).split('.')[0] + '.pbtxt'), 'r')
+            TEMP_PBTXT_FOLDER, os.path.basename(FILE_NAME).split('.')[0] + '.pbtxt'), 'r')
 
         GRAPH_DEF = tf.get_default_graph().as_graph_def(add_shapes=True)
 
