@@ -151,16 +151,15 @@ def patch_mean(content) -> str:
                 op_detail.name, origin_output_shape
             )
             content = patch + "\n" + content
-            origin_output_ops = shape_fetcher.get_nodes_with_input_tensor(
+            for origin_output_op in shape_fetcher.get_nodes_with_input_tensor(
                 op.outputs[0]
-            )
-            assert len(origin_output_ops) == 1
-            origin_output_op_detail = locate_op(
-                content, origin_output_ops[0].name
-            )
-            content = content[:origin_output_op_detail.inputs[0][0]] +\
-                reshape_node_name +\
-                content[origin_output_op_detail.inputs[0][1] + 1:]
+            ):
+                origin_output_op_detail = locate_op(
+                    content, origin_output_op.name
+                )
+                content = content[:origin_output_op_detail.inputs[0][0]] +\
+                    reshape_node_name +\
+                    content[origin_output_op_detail.inputs[0][1] + 1:]
 
     print('Removing unused const by Mean.\n')
     content = re.sub(REDUCTION_IDENCE_REGEX, '', content)

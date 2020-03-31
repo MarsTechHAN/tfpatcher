@@ -18,7 +18,7 @@ class ShapeFetcher:
 
     def get_nodes_with_input_tensor(self, tensor: tf.Tensor) -> List[tf.Operation]:
         return list(filter(
-            lambda op: tensor in op.inputs,
+            lambda op: (tensor in op.inputs) and (op.type not in ["Shape"]),
             self.graph.get_operations()
         ))
 
